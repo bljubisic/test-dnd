@@ -3,23 +3,25 @@
   
     import { flip } from 'svelte/animate';
     import { send, receive } from './transition.js';
-    let RandomStack = [
+    let questions = [
       {
-        name: 'Random',
-        items: ['React', 'Angular', 'Solid', 'Rails', 'Express', 'Flask', 'VPS']
+        name: "Age group",
+        question: "How old are you?\n\n? age_group\n- 0-18\n- 19-35\n- 36-55\n- 56 or older"
       },
       {
-        name: 'Frontend Stack',
-        items: ['Svelte', 'SvelteKit']
-      },
-      {
-        name: 'Backend Stack',
-        items: ['Django']
-      },
-      {
-        name: 'Server Stack',
-        items: ['Vercel']
+        name: "Favorite color",
+        question: "What are your favorite colors?\n\n?fav_color max=4 min=2\n- Red\n- Blue\n- Green\n- Yellow"
       }
+    ]
+    let Stack = [
+      {
+        name: 'Questions',
+        items: questions
+      },
+      {
+        name: 'Survey',
+        items: []
+      },
     ];
   
     let stackHover;
@@ -33,17 +35,63 @@
       event.preventDefault();
       const json = event.dataTransfer.getData('text/plain');
       const data = JSON.parse(json);
-      const [item] = RandomStack[data.stackIndex].items.splice(data.itemIndex, 1);
-      RandomStack[stackIndex].items.push(item);
-      RandomStack = RandomStack;
+      const [item] = Stack[data.stackIndex].items.splice(data.itemIndex, 1);
+      Stack[stackIndex].items.push(item);
+      Stack = Stack;
   
       stackHover = null;
     }
   </script>
   
   <p>Drag a framework/library from random to respected drop</p>
+  <div in:receive={{ key: 0 }} out:send={{ key: 0 }}>
+    <b>{Stack[0].name}</b>
+    <p
+      class:hovering={stackHover === Stack[0].name}
+      on:dragenter={() => (stackHover = Stack[0].name)}
+      on:dragleave={() => (stackHover = null)}
+      on:drop={(event) => drop(event, 0)}
+      ondragover="return false"
+    >
+      {#each Stack[0].items as item, itemIndex (item)}
+        <div
+          class="item"
+          in:receive={{ key: itemIndex }}
+          out:send={{ key: itemIndex }}
+          animate:flip={{ duration: 500 }}
+        >
+          <li draggable={true} on:dragstart={(event) => dragStart(event, 0, itemIndex)}>
+            {item.name}
+          </li>
+        </div>
+      {/each}
+    </p>
+  </div>
+  <div in:receive={{ key: 1 }} out:send={{ key: 1 }}>
+    <b>{Stack[1].name}</b>
+    <p
+      class:hovering={stackHover === Stack[1].name}
+      on:dragenter={() => (stackHover = Stack[1].name)}
+      on:dragleave={() => (stackHover = null)}
+      on:drop={(event) => drop(event, 1)}
+      ondragover="return false"
+    >
+      {#each Stack[1].items as item, itemIndex (item)}
+        <div
+          class="item"
+          in:receive={{ key: itemIndex }}
+          out:send={{ key: itemIndex }}
+          animate:flip={{ duration: 500 }}
+        >
+          <li draggable={true} on:dragstart={(event) => dragStart(event, 1, itemIndex)}>
+            {item.name}
+          </li>
+        </div>
+      {/each}
+    </p>
+  </div>
   
-  {#each RandomStack as stack, stackIndex (stack)}
+  <!-- {#each Stack as stack, stackIndex (stack)}
     <div animate:flip in:receive={{ key: stackIndex }} out:send={{ key: stackIndex }}>
       <b>{stack.name}</b>
       <p
@@ -67,7 +115,7 @@
         {/each}
       </p>
     </div>
-  {/each}
+  {/each} -->
   
   <style>
     .hovering {
