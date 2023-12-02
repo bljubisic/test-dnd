@@ -3,14 +3,17 @@
   
     import { flip } from 'svelte/animate';
     import { send, receive } from './transition.js';
+    import SurveyNode from "survey-md/SurveyNode.svelte";
+    import md from "survey-md/md";
+
     let questions = [
       {
         name: "Age group",
-        question: "How old are you?\n\n? age_group\n- 0-18\n- 19-35\n- 36-55\n- 56 or older"
+        question: "How old are you?\n\n? age_group\n- 0-18\n- 19-35\n- 36-55\n- 56 or older",
       },
       {
         name: "Favorite color",
-        question: "What are your favorite colors?\n\n?fav_color max=4 min=2\n- Red\n- Blue\n- Green\n- Yellow"
+        question: "What are your favorite colors?\n\n?fav_color max=4 min=2\n- Red\n- Blue\n- Green\n- Yellow",
       }
     ]
     let Stack = [
@@ -25,6 +28,11 @@
     ];
   
     let stackHover;
+
+    async function getNode(question) {
+      let node = await md(question);
+      return node;
+    }
   
     function dragStart(event, stackIndex, itemIndex) {
       const data = { stackIndex, itemIndex };
@@ -38,9 +46,32 @@
       const [item] = Stack[data.stackIndex].items.splice(data.itemIndex, 1);
       Stack[stackIndex].items.push(item);
       Stack = Stack;
-  
       stackHover = null;
     }
+
+    const chars =
+      "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    function uid() {
+      let id = "";
+      let size = 16;
+      while (size--) id += chars[(Math.random() * 62) | 0];
+      return id;
+    }
+
+    function next() {
+
+    }
+
+    var page = '';
+
+    let context = {
+      uid: uid(),
+      started_at: new Date()
+        .toISOString()
+        .substring(0, 19)
+        .replace("T", " ")
+    };
   </script>
   
   <p>Drag a framework/library from random to respected drop</p>
@@ -89,6 +120,36 @@
         </div>
       {/each}
     </p>
+  </div>
+  <div>
+    {#each Stack[1].items as item, itemIndex (item)}
+      <div
+        class="item"
+      >
+        <li>
+          {item.question}
+        </li>
+      </div>
+    {/each}
+  </div>
+  <div>
+    {#each Stack[1].items as item, itemIndex (item)}
+      <div
+        class="item"
+      >
+        <li>
+          {#await page = md(item.question)}
+            <p>...waiting</p>
+          {:then page}
+            {#each page as node}
+              <SurveyNode {node} bind:context {next} />
+            {/each}
+          {:catch error}
+            <p style="color: red">{error.message}</p>
+          {/await} 
+        </li>
+      </div>
+    {/each}
   </div>
   
   <!-- {#each Stack as stack, stackIndex (stack)}
