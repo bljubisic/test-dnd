@@ -127,7 +127,7 @@
         class="item"
       >
         <li>
-          {item.question}
+          <span style="white-space: pre-line">{item.question}</span>
         </li>
       </div>
     {/each}
