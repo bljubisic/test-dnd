@@ -72,6 +72,14 @@
         .substring(0, 19)
         .replace("T", " ")
     };
+
+    var toggle = false;
+    let id = "";
+
+    function toggleButton(name) {
+      id = name;
+      toggle = !toggle;
+    }
   </script>
   <p>Drag a framework/library from random to respected drop</p>
   <div class="container">
@@ -92,12 +100,17 @@
             out:send={{ key: itemIndex }}
             animate:flip={{ duration: 500 }}
           >
+            <button class=""on:click={toggleButton(itemIndex)}>✎</button>
             <li draggable={true} on:dragstart={(event) => dragStart(event, 0, itemIndex)}>
               {item.name}
             </li>
           </div>
         {/each}
         </div>
+        {#if toggle}
+          <textarea bind:value={questions[id].question} rows="10" cols="50"/>
+          <button on:click={toggleButton(id)}>Save</button>
+        {/if}
     </div>
     <div class="work">
       <b>{Stack[1].name}</b>
@@ -181,6 +194,9 @@
     p {
       border: solid green 1px;
 
+    }
+    button {
+      font-size: 20px;
     }
     .work {
       display: flex; /* required for drag & drop to work when .item display is inline */
