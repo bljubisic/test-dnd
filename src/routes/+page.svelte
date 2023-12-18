@@ -14,6 +14,14 @@
       {
         name: "Favorite color",
         question: "What are your favorite colors?\n\n?fav_color max=4 min=2\n- Red\n- Blue\n- Green\n- Yellow",
+      },
+      {
+        name: "Open ended question",
+        question: "Open Ended Question sample?\n\n?open_ended\nsdjfjdshf",
+      },
+      {
+        name: "Age",
+        question: "How old are You?\n\n?age min=1 max=99\nAge",
       }
     ]
     let Stack = [
@@ -36,15 +44,23 @@
   
     function dragStart(event, stackIndex, itemIndex) {
       const data = { stackIndex, itemIndex };
+      event.dataTransfer.dropEffect = 'copy';
       event.dataTransfer.setData('text/plain', JSON.stringify(data));
     }
   
-    function drop(event, stackIndex) {
+    function drop(event, stackIndex, targetIndex = 0) {
       event.preventDefault();
       const json = event.dataTransfer.getData('text/plain');
       const data = JSON.parse(json);
-      const [item] = Stack[data.stackIndex].items.splice(data.itemIndex, 1);
-      Stack[stackIndex].items.push(item);
+      console.log(data);
+      console.log(Stack);
+      // const [item] = Stack[data.stackIndex].items.splice(data.itemIndex, 1);
+      if (stackIndex === data.stackIndex) {
+        const [item] = Stack[data.stackIndex].items.splice(data.itemIndex, 1);
+        Stack[stackIndex].items.push(item);
+      } else {
+        Stack[stackIndex].items.push(Stack[data.stackIndex].items[data.itemIndex]);
+      }
       Stack = Stack;
       stackHover = null;
     }
@@ -79,6 +95,58 @@
     function toggleButton(name) {
       id = name;
       toggle = !toggle;
+    }
+
+    function flatten(obj) {
+      var flattenedObject = {};
+      traverseAndFlatten(obj, flattenedObject);
+      return flattenedObject;
+    }
+
+    function traverseAndFlatten(currentNode, target, flattenedKey) {
+      for (var key in currentNode) {
+          if (currentNode.hasOwnProperty(key)) {
+              var newKey;
+              if (flattenedKey === undefined) {
+                  newKey = key;
+              } else {
+                  newKey = flattenedKey + '.' + key;
+              }
+
+              var value = currentNode[key];
+              if (typeof value === "object") {
+                  traverseAndFlatten(value, target, newKey);
+              } else {
+                  target[newKey] = value;
+              }
+          }
+      }
+    }
+
+    function convert(flatten, raw) {
+      var convertedObj = {};
+      var keys = Object.keys(flatten);
+      var questionKeys = keys.filter((key) => key.includes("question.name"));
+      questionKeys.forEach((key) => convertedObj[key.substring(key.lastIndexOf(".")+1)] = flatten[key]);
+      convertedObj["type"] = "question"; 
+      var questionParamsKeys = keys.filter((key) => key.includes("question.params"));
+      if (questionParamsKeys) {
+        var params = {}
+        questionParamsKeys.forEach((key) => params[key.substring(key.lastIndexOf(".")+1)] = flatten[key]);
+        convertedObj["params"] = params;
+      }
+      var valueKeys = keys.filter((key) => key.includes("value"));
+      if (valueKeys) {
+        var values = [];
+        valueKeys.forEach((key) =>  values.push(flatten[key]));
+        if (values.length > 1) {
+          convertedObj["values"] = values;
+        } else {
+          convertedObj["values"] = [];
+        }
+      }
+      convertedObj["raw"] = raw;
+      return JSON.stringify(convertedObj);
     }
   </script>
   <p>Drag a framework/library from random to respected drop</p>
@@ -123,51 +191,33 @@
           on:drop={(event) => drop(event, 1)}
           ondragover="return false"
         >
-          {#each Stack[1].items as item, itemIndex (item)}
+          {#each Stack[1].items as item, itemIndex }
             <div
               class="item"
               in:receive={{ key: itemIndex }}
               out:send={{ key: itemIndex }}
-              animate:flip={{ duration: 500 }}
             >
               <li draggable={true} on:dragstart={(event) => dragStart(event, 1, itemIndex)}>
-                {item.name}
+                <div class="render">
+                  <div class="item">
+                    <li>
+                      {#await page = md(item.question)}
+                        <p>...waiting</p>
+                      {:then page}
+                        {#each page as node}
+                          <SurveyNode {node} bind:context {next} />
+                        {/each}
+                      {:catch error}
+                        <p style="color: red">{error.message}</p>
+                      {/await} 
+                    </li>
+                  </div>
+                </div>
               </li>
             </div>
           {/each}
         </div>
       </div>
-      <div class="container-results">
-        {#each Stack[1].items as item, itemIndex (item)}
-        
-          <div class="results">
-            <div class="markdown">
-              <div
-                class="item"
-              >
-                <li>
-                  <span style="white-space: pre-line">{item.question}</span>
-                </li>
-              </div>
-            </div>
-            <div class="render">
-              <div class="item">
-                <li>
-                  {#await page = md(item.question)}
-                    <p>...waiting</p>
-                  {:then page}
-                    {#each page as node}
-                      <SurveyNode {node} bind:context {next} />
-                    {/each}
-                  {:catch error}
-                    <p style="color: red">{error.message}</p>
-                  {/await} 
-                </li>
-              </div>
-            </div>
-          </div>
-        {/each}
-      </div> 
     </div>
   </div>
 
